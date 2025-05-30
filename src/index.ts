@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { MarketSymbolResponse, MarketSymbols } from './types/market';
 
 export interface BitkubSDKConfig {
   baseUrl?: string;
@@ -20,10 +21,21 @@ export class BitkubSDK {
     this.apiSecret = config.apiSecret;
   }
 
-  async fetchMarketSymbols(): Promise<Record<string, any>> {
+  async fetchMarketSymbols(): Promise<MarketSymbols> {
     try {
       const response = await axios.get(`${this.baseUrl}/api/market/symbols`);
-      return response.data;
+      const rawSymbols: MarketSymbolResponse[] = response.data.result;
+
+      const transformed: MarketSymbols = {};
+      for (const item of rawSymbols) {
+        const [base, quote] = item.symbol.split('_');
+        const swappedSymbol = `${quote}_${base}`;
+        transformed[swappedSymbol] = {
+          ...item,
+          symbol: swappedSymbol,
+        };
+      }
+      return transformed;
     } catch (error) {
       throw new Error(`Failed to fetch market symbols: ${error}`);
     }
