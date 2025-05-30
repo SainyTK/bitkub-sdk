@@ -4,22 +4,20 @@ export interface MarketSymbolResponse {
   info: string;
 }
 
-export type MarketSymbols = Record<string, MarketSymbolResponse>
-
-export type OrderBookEntry = [
+export type ResponseOrderBookEntry = [
   string, // order id
   number, // timestamp
   number, // volume
   number, // rate
-  number  // amount
+  number, // amount
 ];
 
-export interface OrderBookResult {
-  bids: OrderBookEntry[];
-  asks: OrderBookEntry[];
+export interface ResponseOrderBookResult {
+  bids: ResponseOrderBookEntry[];
+  asks: ResponseOrderBookEntry[];
 }
 
 export interface OrderBookResponse {
   error: number;
-  result: OrderBookResult;
+  result: ResponseOrderBookResult;
 }

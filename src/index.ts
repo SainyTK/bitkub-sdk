@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { MarketSymbolResponse, MarketSymbols, OrderBookResponse, OrderBookResult } from './types/market';
+import { MarketSymbols, OrderBook } from './types/output.type';
+import { MarketSymbolResponse, OrderBookResponse, ResponseOrderBookEntry } from './types/response.type';
 
 export interface BitkubSDKConfig {
   baseUrl?: string;
@@ -41,7 +42,7 @@ export class BitkubSDK {
     }
   }
 
-  async fetchOrderBooks(syms: string[], lmt?: number): Promise<Record<string, OrderBookResult>> {
+  async fetchOrderBooks(syms: string[], lmt?: number): Promise<Record<string, OrderBook>> {
     try {
       const results = await Promise.all(
         syms.map(async (sym) => {
@@ -52,7 +53,11 @@ export class BitkubSDK {
           if (response.data.error !== 0) {
             throw new Error(`API error for ${sym}: ${response.data.error}`);
           }
-          return [sym, response.data.result] as const;
+          // Transform bids and asks
+          const { bids, asks } = response.data.result;
+          const transform = (entries: ResponseOrderBookEntry[]) =>
+            entries.map((entry) => ({ price: entry[3], amount: entry[4] }));
+          return [sym, { bids: transform(bids), asks: transform(asks) }] as const;
         })
       );
       return Object.fromEntries(results);
