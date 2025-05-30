@@ -55,15 +55,32 @@ npm install @arbit-x/bitkub-sdk
 ```typescript
 import { BitkubSDK } from '@arbit-x/bitkub-sdk';
 
+// Initialize SDK (API key/secret are optional for public endpoints)
 const bitkubSDK = new BitkubSDK({
-  baseUrl: "https://api.bitkub.com",
-  baseWsUrl: "wss://api.bitkub.com/websocket-api",
-  apiKey: "your-api-key",
-  apiSecret: "your-api-secret"
+  baseUrl: 'https://api.bitkub.com',
+  baseWsUrl: 'wss://api.bitkub.com/websocket-api',
+  // apiKey: 'your-api-key',
+  // apiSecret: 'your-api-secret',
 });
 
-// Fetch market symbols
+// --- REST Example: Fetch market symbols ---
 const marketSymbols = await bitkubSDK.fetchMarketSymbols();
+console.log('Market symbols:', marketSymbols);
+
+// --- REST Example: Fetch order books for symbols ---
+const orderBooks = await bitkubSDK.fetchOrderBooks(['BTC_THB', 'ETH_THB']);
+const btcOrderBook = orderBooks['BTC_THB']
+const ethOrderBook = orderBooks['ETH_THB']
+console.log('Order books:', orderBooks);
+
+// --- WebSocket Example: Subscribe to real-time order book updates ---
+const subscriptionId = await bitkubSDK.subscribeOrderBooks(['BTC_THB'], (orderBooks) => {
+    const { bids, asks } = orderBooks['BTC_THB']
+    console.log('Live order book update:', bids, asks);
+});
+
+// ...later, to unsubscribe from updates:
+bitkubSDK.unsubscribeOrderBooks(subscriptionId);
 ```
 
 ---
