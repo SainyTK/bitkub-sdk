@@ -31,6 +31,7 @@
     "devDependencies": {
         "@types/jest": "^29.5.14",
         "@types/node": "^20.11.24",
+        "@types/ws": "^8.18.1",
         "@typescript-eslint/eslint-plugin": "^7.1.0",
         "@typescript-eslint/parser": "^7.1.0",
         "eslint": "^8.57.0",
@@ -42,6 +43,7 @@
     },
     "dependencies": {
         "axios": "^1.6.7",
+        "isomorphic-ws": "^5.0.0",
         "ws": "^8.16.0"
     }
 }

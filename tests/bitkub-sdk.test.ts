@@ -1,9 +1,24 @@
 import { BitkubSDK } from '../src/index';
 import axios from 'axios';
 import { MarketSymbols } from '../src/types/output.type';
+import WebSocket from 'isomorphic-ws';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+jest.mock('isomorphic-ws', () => {
+  return jest.fn().mockImplementation(() => {
+    return {
+      onmessage: null,
+      onopen: null,
+      onerror: null,
+      onclose: null,
+      close: jest.fn(),
+      terminate: jest.fn(),
+      readyState: 1, // OPEN
+    };
+  });
+});
 
 describe('BitkubSDK', () => {
   it('should instantiate with default config', () => {
@@ -109,6 +124,73 @@ describe('BitkubSDK', () => {
       mockedAxios.get.mockResolvedValueOnce({ data: mockApiResponse });
       const sdk = new BitkubSDK();
       await expect(sdk.fetchOrderBooks(["BTC_THB"])).rejects.toThrow('API error for BTC_THB: 1');
+    });
+  });
+
+  describe('subscribeOrderBooks', () => {
+    let sdk: BitkubSDK;
+    let mockWsInstances: any[];
+    let originalWs: any;
+
+    beforeEach(() => {
+      sdk = new BitkubSDK();
+      mockWsInstances = [];
+      // Patch the mock to collect instances
+      ((WebSocket as unknown) as jest.Mock).mockImplementation(() => {
+        const ws = {
+          on: jest.fn(),
+          close: jest.fn(),
+          terminate: jest.fn(),
+          readyState: 1, // OPEN
+        };
+        mockWsInstances.push(ws);
+        return ws;
+      });
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should call callback with order book data on tradeschanged event', async () => {
+      // Mock fetchMarketSymbols
+      mockedAxios.get.mockResolvedValueOnce({
+        data: {
+          error: 0,
+          result: [
+            { id: 1, symbol: 'THB_BTC', info: 'Thai Baht to Bitcoin' },
+          ],
+        },
+      });
+      const callback = jest.fn();
+      const promise = sdk.subscribeOrderBooks(['BTC_THB'], callback);
+      // Wait for subscription to resolve
+      const subId = await promise;
+      expect(subId).toMatch(/^sub_/);
+      // Simulate tradeschanged event
+      const ws = mockWsInstances[0];
+      const tradeschangedMsg = JSON.stringify({
+        data: [
+          [],
+          [[null, 10000, 0.5], [null, 9999, 0.3]], // bids: [price, amount]
+          [[null, 10001, 0.45], [null, 10002, 0.2]], // asks: [price, amount]
+        ],
+        event: 'tradeschanged',
+        pairing_id: 1,
+      });
+      ws.onmessage({ data: tradeschangedMsg });
+      expect(callback).toHaveBeenCalledWith({
+        BTC_THB: {
+          bids: [
+            { price: 10000, amount: 0.5 },
+            { price: 9999, amount: 0.3 },
+          ],
+          asks: [
+            { price: 10001, amount: 0.45 },
+            { price: 10002, amount: 0.2 },
+          ],
+        },
+      });
     });
   });
 });
