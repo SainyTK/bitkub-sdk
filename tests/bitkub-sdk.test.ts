@@ -39,4 +39,67 @@ describe('BitkubSDK', () => {
       await expect(sdk.fetchMarketSymbols()).rejects.toThrow('Failed to fetch market symbols');
     });
   });
+
+  describe('fetchOrderBooks', () => {
+    it('should fetch order book for a single symbol', async () => {
+      const mockApiResponse = {
+        error: 0,
+        result: {
+          bids: [["1", 1529453033, 997.5, 10000, 0.09975]],
+          asks: [["680", 1529491094, 997.5, 10000, 0.09975]],
+        },
+      };
+      mockedAxios.get.mockResolvedValueOnce({ data: mockApiResponse });
+      const sdk = new BitkubSDK();
+      const result = await sdk.fetchOrderBooks(["BTC_THB"]);
+      expect(result).toEqual({
+        BTC_THB: mockApiResponse.result,
+      });
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        'https://api.bitkub.com/api/market/books',
+        { params: { sym: 'thb_btc' } }
+      );
+    });
+
+    it('should fetch order books for multiple symbols', async () => {
+      const mockApiResponse1 = {
+        error: 0,
+        result: {
+          bids: [["1", 1529453033, 997.5, 10000, 0.09975]],
+          asks: [["680", 1529491094, 997.5, 10000, 0.09975]],
+        },
+      };
+      const mockApiResponse2 = {
+        error: 0,
+        result: {
+          bids: [["2", 1529453034, 500, 20000, 0.025]],
+          asks: [["681", 1529491095, 500, 20000, 0.025]],
+        },
+      };
+      mockedAxios.get
+        .mockResolvedValueOnce({ data: mockApiResponse1 })
+        .mockResolvedValueOnce({ data: mockApiResponse2 });
+      const sdk = new BitkubSDK();
+      const result = await sdk.fetchOrderBooks(["BTC_THB", "ETH_THB"]);
+      expect(result).toEqual({
+        BTC_THB: mockApiResponse1.result,
+        ETH_THB: mockApiResponse2.result,
+      });
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        'https://api.bitkub.com/api/market/books',
+        { params: { sym: 'thb_btc' } }
+      );
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        'https://api.bitkub.com/api/market/books',
+        { params: { sym: 'thb_eth' } }
+      );
+    });
+
+    it('should throw an error if the API returns an error for a symbol', async () => {
+      const mockApiResponse = { error: 1, result: { bids: [], asks: [] } };
+      mockedAxios.get.mockResolvedValueOnce({ data: mockApiResponse });
+      const sdk = new BitkubSDK();
+      await expect(sdk.fetchOrderBooks(["BTC_THB"])).rejects.toThrow('API error for BTC_THB: 1');
+    });
+  });
 });

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { MarketSymbolResponse, MarketSymbols } from './types/market';
+import { MarketSymbolResponse, MarketSymbols, OrderBookResponse, OrderBookResult } from './types/market';
 
 export interface BitkubSDKConfig {
   baseUrl?: string;
@@ -39,5 +39,30 @@ export class BitkubSDK {
     } catch (error) {
       throw new Error(`Failed to fetch market symbols: ${error}`);
     }
+  }
+
+  async fetchOrderBooks(syms: string[], lmt?: number): Promise<Record<string, OrderBookResult>> {
+    try {
+      const results = await Promise.all(
+        syms.map(async (sym) => {
+          const apiSym = this.transformSymbol(sym);
+          const params: { sym: string; lmt?: number } = { sym: apiSym };
+          if (lmt !== undefined) params.lmt = lmt;
+          const response = await axios.get<OrderBookResponse>(`${this.baseUrl}/api/market/books`, { params });
+          if (response.data.error !== 0) {
+            throw new Error(`API error for ${sym}: ${response.data.error}`);
+          }
+          return [sym, response.data.result] as const;
+        })
+      );
+      return Object.fromEntries(results);
+    } catch (error) {
+      throw new Error(`Failed to fetch order books: ${error}`);
+    }
+  }
+
+  private transformSymbol(sym: string): string {
+    const [base, quote] = sym.split('_');
+    return `${quote.toLowerCase()}_${base.toLowerCase()}`;
   }
 } 
