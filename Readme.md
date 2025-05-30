@@ -68,27 +68,6 @@ const marketSymbols = await bitkubSDK.fetchMarketSymbols();
 
 ---
 
-## Development
-
-### Build & Development
-
-- **Build:**  
-  `npm run build` — Compiles TypeScript to `dist/`
-- **Clean:**  
-  `npm run clean` — Cleans the `dist` directory
-- **Lint:**  
-  `npm run lint` — Runs ESLint
-- **Format:**  
-  `npm run format` — Formats code with Prettier
-
-### Testing & Quality (Planned)
-
-- Set up Jest/Mocha
-- Add unit and integration tests
-- Set up CI/CD and code coverage
-
----
-
 ## License
 
 MIT
