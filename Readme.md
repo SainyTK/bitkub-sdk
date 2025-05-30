@@ -43,7 +43,8 @@ A TypeScript SDK for the Bitkub Exchange API, providing both REST and WebSocket 
 
 ---
 
-## Installation```bash
+## Installation
+```bash
 npm install @arbit-x/bitkub-sdk
 ```
 
